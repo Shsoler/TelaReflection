@@ -1,0 +1,5 @@
+package enume;
+
+public enum TipoEntrada {
+	TEXTFIELD,TEXTAREA,PASSWORD,RADIOBUTTON,CHECKBOX,SPINNER;
+}
