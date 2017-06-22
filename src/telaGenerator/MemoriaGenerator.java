@@ -247,7 +247,7 @@ public class MemoriaGenerator {
 			URLClassLoader child;
 			child = new URLClassLoader(new URL[] { new URL(val.caminhoJar()) }, frame.getClass().getClassLoader());
 			Class<?> classToLoad = Class.forName(val.nomeClasse(), true, child);
-			Method method = classToLoad.getDeclaredMethod(val.nomeMetodo(), String.class);
+			Method method = classToLoad.getDeclaredMethod(val.nomeMetodo(), campo.getType());
 			Object instance = classToLoad.newInstance();
 			if(campo.getType() == String.class)
 				result = method.invoke(instance, valor.toString());

@@ -15,6 +15,7 @@ public class Cliente {
 	@Validacao(caminhoJar="file:///home/sergio/ValidarString.jar",nomeClasse="ValidarString",nomeMetodo="Validar")
 	@Campos(tipoEntrada=TipoEntrada.PASSWORD)
 	private String senha;
+	@Validacao(caminhoJar="file:///home/sergio/ValidarString.jar",nomeClasse="ValidarString",nomeMetodo="ValidarNumero")
 	@Campos
 	private Integer idade;
 	@Campos(altura=200,largura=200,tipoEntrada=TipoEntrada.TEXTAREA,nomeCampo="Observações")
