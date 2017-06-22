@@ -7,6 +7,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -19,6 +21,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -30,6 +33,7 @@ import javax.swing.table.DefaultTableModel;
 import annotations.Campos;
 import annotations.MapaDAO;
 import annotations.Tela;
+import annotations.Validacao;
 import enume.TipoEntrada;
 
 public class MemoriaGenerator {
@@ -160,25 +164,34 @@ public class MemoriaGenerator {
 							
 							Field[] camposobj = klass.getDeclaredFields();
 							for (Field campo : camposobj) {
-								campo.setAccessible(true);
-								Object objCampoMapeado = fields.get(campo.getName());
-								if(objCampoMapeado instanceof ButtonGroup){
-									ButtonGroup grupo = (ButtonGroup) objCampoMapeado;
-							        for (Enumeration<AbstractButton> buttons = grupo.getElements(); buttons.hasMoreElements();) {
-							            AbstractButton button = buttons.nextElement();
+								if (campo.getAnnotation(Campos.class).ativo()) {
+									campo.setAccessible(true);
+									Object objCampoMapeado = fields.get(campo.getName());
+									if (objCampoMapeado instanceof ButtonGroup) {
+										ButtonGroup grupo = (ButtonGroup) objCampoMapeado;
+										for (Enumeration<AbstractButton> buttons = grupo.getElements(); buttons
+												.hasMoreElements();) {
+											AbstractButton button = buttons.nextElement();
 
-							            if (button.isSelected()) {
-							            	//Method retorno = objCampoMapeado.getClass().getMethod(, parameterTypes)
-							            	campo.set(obj,button.getText());
-							            }
-							        }
-								}else{
-									Method text = objCampoMapeado.getClass().getMethod("getText");
-									Object valor = text.invoke(objCampoMapeado);
-									if(campo.getType() == Integer.class)
-										campo.set(obj, Integer.valueOf((String) valor));
-									if(campo.getType() == String.class)
-										campo.set(obj, valor);
+											if (button.isSelected()) {
+												//Method retorno = objCampoMapeado.getClass().getMethod(, parameterTypes)
+												campo.set(obj, button.getText());
+											}
+										}
+									} else {
+										Method text = objCampoMapeado.getClass().getMethod("getText");
+										Object valor = text.invoke(objCampoMapeado);
+										if(campo.isAnnotationPresent(Validacao.class))
+										if(!Validar(frame,campo,valor))
+											break;
+										if (campo.getType() == Integer.class)
+											campo.set(obj, Integer.valueOf((String) valor));
+										if (campo.getType() == String.class)
+											campo.set(obj, valor);
+										if(campo.getType() == Double.class)
+											campo.set(obj, Double.valueOf((String)valor));
+
+									} 
 								}
 							}
 				//			
@@ -226,5 +239,31 @@ public class MemoriaGenerator {
 				frame.setVisible(true);
 			} 
 		}
+	}
+	protected Boolean Validar(JFrame frame2, Field campo,Object valor) {
+		try {
+			Object result = new Object();
+			Validacao val = campo.getAnnotation(Validacao.class);
+			URLClassLoader child;
+			child = new URLClassLoader(new URL[] { new URL(val.caminhoJar()) }, frame.getClass().getClassLoader());
+			Class<?> classToLoad = Class.forName(val.nomeClasse(), true, child);
+			Method method = classToLoad.getDeclaredMethod(val.nomeMetodo(), String.class);
+			Object instance = classToLoad.newInstance();
+			if(campo.getType() == String.class)
+				result = method.invoke(instance, valor.toString());
+			if(campo.getType() == Integer.class)
+				result = method.invoke(instance, Integer.valueOf(valor.toString()));
+			if(campo.getType() == Double.class)
+				result = method.invoke(instance, Double.valueOf(valor.toString()));
+			if(result.toString().length()>0){
+				JOptionPane.showMessageDialog(frame2, result.toString());
+				return false;
+			}
+			return true;
+		} catch (Exception e) {
+		e.printStackTrace();
+		}
+		return null;
+		
 	}
 }
